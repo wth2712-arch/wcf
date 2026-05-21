@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSE Classification</title>
+    <style>
+        /* 保持之前的CSS样式不变 */
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #6b8cbc;
+            --background-color: #f5f7fa;
+            --card-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #dddddd;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .filters {
+            flex: 1;
+            min-width: 300px;
+            background-color: var(--card-color);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .filter-group {
+            margin-bottom: 20px;
+        }
+        
+        .filter-group h3 {
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--primary-color);
+        }
+        
+        .filter-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .filter-option {
+            background-color: #f0f0f0;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        
+        .filter-option:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .filter-option.selected {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .results {
+            flex: 3;
+            min-width: 300px;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .results-count {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .reset-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .reset-btn:hover {
+            background-color: #c0392b;
+        }
+        
+/* 圖片網格 - 單欄顯示 */
+.image-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* 圖片卡片 - 確保垂直排列 */
+.image-card {
+    background-color: var(--card-color);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    display: flex;
+    flex-direction: column; /* 確保垂直排列 */
+}
+
+/* 資訊區域 - 在上方（保持不變） */
+.image-info {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #fafafa;
+    /* 不需要 order，因為 HTML 順序已經正確 */
+}
+
+.image-info h4 {
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 8px;
+}
+
+.image-info p {
+    margin-bottom: 8px;
+    font-size: 1rem;
+    line-height: 1.6;
+    display: flex;
+}
+
+.image-info strong {
+    min-width: 80px;
+    color: var(--text-color);
+    margin-right: 10px;
+}
+
+/* 圖片區域 - 在下方，優化高度 */
+.image-container {
+    width: 100%;
+    height: auto;
+    background-color: #f8f8f8;
+    padding: 15px;
+    display: block; /* 使用 block 布局 */
+    text-align: left; /* 左對齊 */
+}
+
+.image-container img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+.image-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+// 初始提示樣式 
+.initial-prompt {
+    text-align: center;
+    padding: 60px 40px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+    margin: 20px 0;
+}
+
+.prompt-content h3 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.prompt-content p {
+    color: #6c757d;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.prompt-tips {
+    text-align: left;
+    max-width: 400px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.prompt-tips ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.prompt-tips li {
+    margin-bottom: 8px;
+    color: #495057;
+}
+
+/* 結果計數樣式調整 */
+.results-count {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+/* 導出按鈕樣式 */
+.export-btn {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-left: 10px;
+}
+
+.export-btn:hover {
+    background-color: #219955;
+}
+
+.export-btn:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+}
+
+.export-progress {
+    margin-top: 10px;
+    display: none;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #4a6fa5;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.progress-text {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.title-row h4 {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.pdf-btn {
+  background-color: #8e44ad;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.pdf-btn:hover {
+  background-color: #732d91;
+}
+
+.pdf-btn:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+</style>
+</head>
+
+<body>
+    <header>
+        <h1>DSE Classification</h1>
+    </header>
+    
+    <div id="error-container"></div>
+    
+    <div class="data-input" id="data-input" style="display: none;">
+        <h3>手動輸入數據</h3>
+        <p>由於CORS限制，請將Google Sheets的數據複製到下方艾本框：</p>
+        <textarea id="csv-data" rows="10" style="width: 100%; padding: 10px; font-family: monospace;" placeholder="請從Google Sheets複製所數據（包括標題行）並貼到這裏"></textarea>
+        <button onclick="processManualData()" style="margin-top: 10px; padding: 8px 16px; background-color: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer;">加載數據</button>
+    </div>
+    
+    <div class="container">
+        <div class="filters">
+            <div class="filter-group">
+                <h3>Stage</h3>
+                <div class="filter-options" id="stage-filters"></div>
+            </div>
+            
+            <div class="filter-group">
+                <h3>Year</h3>
+                <div class="filter-options" id="year-filters"></div>
+            </div>
+            
+            <div class="filter-group">
+                <h3>Paper</h3>
+                <div class="filter-options" id="paper-filters"></div>
+            </div>
+            
+            <div class="filter-group">
+                <h3>Section</h3>
+                <div class="filter-options" id="section-filters"></div>
+            </div>
+            
+            <div class="filter-group">
+                <h3>Level</h3>
+                <div class="filter-options" id="level-filters"></div>
+            </div>
+            
+            <div class="filter-group">
+                <h3>Strand</h3>
+                <div class="filter-options" id="strand-filters"></div>
+            </div>
+            
+            <div class="filter-group">
+                <h3>Topic</h3>
+                <div class="filter-options" id="topic-filters"></div>
+            </div>
+        </div>
+        
+        <div class="results">
+<div class="results-header">
+    <div class="results-count"><span id="result-count">0</span> question(s) is/are found.</div>
+    <div>
+        <button class="reset-btn" id="reset-btn">Reset Filter</button>
+        <button class="export-btn" id="export-docx-btn" disabled>Export to DOCX</button>
+    </div>
+</div>
+
+<!-- 導出進度顯示 -->
+<div class="export-progress" id="export-progress">
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="progress-text" id="progress-text">Preparing export...</div>
+</div>
+
+            
+            <div class="loading" id="loading">
+                Loading...
+            </div>
+            
+            <div class="image-grid" id="image-grid"></div>
+            
+            <div class="no-results" id="no-results" style="display: none;">
+                No questions are found
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+
+function loadJSONP(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = 'cb_' + Date.now();
+
+    const script = document.createElement('script');
+
+    window[callbackName] = function(data) {
+      delete window[callbackName];
+      document.head.removeChild(script);
+      resolve(data);
+    };
+
+    script.src = `${url}?callback=${callbackName}`;
+
+    script.onerror = function() {
+      delete window[callbackName];
+      reject(new Error('JSONP load failed'));
+    };
+
+    document.head.appendChild(script);
+  });
+}
+        // 图片数据存储
+        let imageData = [];
+        let filteredImages = [];
+        
+        // 筛选选项
+        const filterOptions = {
+            stage: ['Junior', 'Senior'],
+            year: ['2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015', '2014', '2013', '2012'],
+            paper: ['P1', 'P2', 'M1', 'M2'],
+            section: ['A1', 'A2', 'B', 'A'],
+            strand: ['A', 'G', 'D', 'M1', 'M2', 'OC'],
+            topic: [
+                'index', 'subject', 'fraction', 'factorization', 'system_of_eq', 'percentage', 'rate', 'ratio', 'scale', 'approximation', 'expand', 'identity', 'sequence', 'binary', 'hexadecimal', 'complex', 'quad_eq', 'function', 'quad_graph', 'division_alg', 'factor_thm', 'remainder_thm', 'graph_exp', 'graph_log', 'log_transform', 'log_eq', 'HCF', 'LCM', 'comp_ineq', 'quad_ineq', 'transform_function', 'variation', 'AS', 'GS', 'LP', 
+                'JS_geo_prop', 'parallel_line', 'special_tri_quadrilateral', 'polygon', 'congruent_similar', 'similar_solids', 'arc', 'sector', 'perimeter', '2D_area', '3D_area', 'volume', 'pyth_thm', 'area_ratio', 'measure', 'polar', 'transform_point', 'eq_of_st_line', 'locus', 'eq_of_circle', 'intersection_circle_line', 'prop_of_circle', 'tangent_to_circle', 'JS_trigo', 'trigo_identity', 'trigo_eq', '2D_trigo', '3D_trigo', 'circum_inscribe', 'centres', 
+                'JS_prob', 'expected_value', 'permutation', 'combination', 'SS_prob', 'standard_score', 'central_tendency', 'dispersion', 'bar_chart', 'pie_chart', 'table', 'stem_and_leaf', 'box_and_whisker',
+                'M1_BT', 'M1_log_trans', 'M1_lim', 'M1_diff', 'M1_in_decrease', 'M1_tangent', 'M1_extreme', 'M1_rate', 'M1_integration', 'M1_eq_of_curve', 'M1_area', 'M1_trape', 'M1_condition', 'M1_discrete', 'M1_binomial', 'M1_poisson', 'M1_normal', 'M1_CLT', 'M1_CI',
+                'M2_MI', 'M2_BT', 'M2_first', 'M2_lim', 'M2_diff', 'M2_in_decrease', 'M2_tangent', 'M2_extreme', 'M2_inflexion', 'M2_asymptote', 'M2_sketch', 'M2_rate', 'M2_integration', 'M2_sub', 'M2_trigo_sub', 'M2_parts', 'M2_eq_of_curve', 'M2_area', 'M2_volume', 'M2_matrix', 'M2_system', 'M2_vector', 'others'
+            ]
+        };
+        
+        // 当前选中的筛选条件
+        const selectedFilters = {
+            stage: [],
+            year: [],
+            paper: [],
+            section: [],
+            level: [],
+            strand: [],
+            topic: []
+        };
+        
+// 初始化頁面
+document.addEventListener('DOMContentLoaded', function() {
+    initializeFilters();
+    loadImageData();
+    
+    // 重置按鈕事件
+    document.getElementById('reset-btn').addEventListener('click', resetFilters);
+    
+    // 一開始隱藏圖片區域
+    document.getElementById('image-grid').style.display = 'none';
+    document.getElementById('no-results').style.display = 'none';
+    document.getElementById('loading').style.display = 'none';
+    // 初始化導出按鈕狀態
+    updateExportButton(); // 添加這一行
+
+});        
+        // 显示错误信息
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.innerHTML = `
+                <div class="error-message">
+                    <strong>錯誤:</strong> ${message}
+                </div>
+            `;
+        }
+        
+        // 初始化筛选器
+        function initializeFilters() {
+            for (const category in filterOptions) {
+                const container = document.getElementById(`${category}-filters`);
+                
+                filterOptions[category].forEach(option => {
+                    const optionElement = document.createElement('div');
+                    optionElement.className = 'filter-option';
+                    optionElement.textContent = option;
+                    optionElement.dataset.value = option;
+                    
+                    optionElement.addEventListener('click', function() {
+                        this.classList.toggle('selected');
+                        
+                        if (this.classList.contains('selected')) {
+                            selectedFilters[category].push(option);
+                        } else {
+                            const index = selectedFilters[category].indexOf(option);
+                            if (index > -1) {
+                                selectedFilters[category].splice(index, 1);
+                            }
+                        }
+                        
+                        filterImages();
+                    });
+                    
+                    container.appendChild(optionElement);
+                });
+            }
+        }
+        
+        // 加载图片数据
+async function loadImageData() {
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzemie44f44aNV_WZJGYsAxe0kf2HKQAhfgvlVy03BHa0WQkqvcCARJst9CNhdjpAPo/exec';
+
+  try {
+    const data = await loadJSONP(API_URL);
+
+    console.log('API回應:', data);
+
+    processImageData(data);
+
+  } catch (error) {
+    console.error('JSONP錯誤:', error);
+    alert('讀取資料失敗: ' + error.message);
+  }
+}
+        
+        // 处理手动输入的数据
+        function processManualData() {
+            const csvText = document.getElementById('csv-data').value;
+            if (!csvText.trim()) {
+                alert('请输入CSV数据');
+                return;
+            }
+            
+            try {
+                const data = parseCSV(csvText);
+                if (data.length > 0) {
+                    processImageData(data);
+                    document.getElementById('data-input').style.display = 'none';
+                    showError('');
+                } else {
+                    alert('无法解析数据，请检查格式');
+                }
+            } catch (error) {
+                alert('解析数据时出错: ' + error.message);
+            }
+        }
+        
+// 解析CSV數據（增強版本）
+function parseCSV(csvText) {
+    const lines = csvText.split('\n').filter(line => line.trim() !== '');
+    if (lines.length === 0) return [];
+    
+    // 檢測分隔符（逗號或製表符）
+    const firstLine = lines[0];
+    const hasTab = firstLine.includes('\t');
+    const delimiter = hasTab ? '\t' : ',';
+    
+    console.log('檢測到分隔符:', delimiter === '\t' ? '製表符' : '逗號');
+    
+    const headers = firstLine.split(delimiter).map(h => h.trim());
+    console.log('CSV標頭:', headers);
+    
+    const result = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        const currentLine = lines[i];
+        
+        // 簡單的CSV解析，處理包含逗號的字段
+        const values = [];
+        let inQuotes = false;
+        let currentValue = '';
+        
+        for (let j = 0; j < currentLine.length; j++) {
+            const char = currentLine[j];
+            
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === delimiter && !inQuotes) {
+                values.push(currentValue.trim());
+                currentValue = '';
+            } else {
+                currentValue += char;
+            }
+        }
+        values.push(currentValue.trim());
+        
+        const obj = {};
+        for (let j = 0; j < headers.length; j++) {
+            let value = values[j] || '';
+            // 移除可能的引號
+            if (value.startsWith('"') && value.endsWith('"')) {
+                value = value.slice(1, -1);
+            }
+            obj[headers[j]] = value;
+        }
+        
+        result.push(obj);
+    }
+    
+    console.log('解析後的數據:', result);
+    return result;
+}
+
+        
+// 使用示例數據
+function useSampleData() {
+    const sampleData = [
+        {
+            name: '2025_P1_Q1_E.jpg',
+            stage: 'JS',
+            year: '2025',
+            paper: 'P1',
+            section: 'A',
+            level: '5',
+            strand: 'A',
+            topic: 'index;subject',
+            fileId: '1mjIuKJ5O6yUuHdMRV3xClshxltj1hy-h'
+        },
+        {
+            name: '2024_P2_Q2_D.jpg',
+            stage: '4A',
+            year: '2024',
+            paper: 'P2',
+            section: 'B',
+            level: '4',
+            strand: 'G',
+            topic: 'fraction;factorization',
+            fileId: '13l2yWoUbTKdTdK5afpuS6SFWHcpf4H_y'
+        },
+        {
+            name: '2023_P1_Q3_C.jpg',
+            stage: '5B',
+            year: '2023',
+            paper: 'P1',
+            section: 'A1',
+            level: '6',
+            strand: 'D',
+            topic: 'system_of_eq;percentage',
+            fileId: '1m8Z17odqIJ8xmuplaz0gejV-VLmU3s6E'
+        }
+    ];
+    
+    processImageData(sampleData);
+}
+        
+// 處理圖片數據
+function processImageData(data) {
+    imageData = data.map(row => {
+        // 解析topic字段，處理多個topic用分號分隔的情況
+        let topics = [];
+        if (row.topic && row.topic.trim() !== '') {
+            topics = row.topic.split(';').map(t => t.trim());
+        }
+        
+return {
+  name: row.name,
+  stage: row.stage,
+  year: row.year,
+  paper: row.paper,
+  section: row.section,
+  level: row.level,
+  strand: row.strand,
+  topic: topics,
+  fileId: row.fileId || row.driveId || row.id || '',
+  solID: row.solID || row.solId || row.solutionId || row.answerId || ''
+};
+    });
+    
+    // 檢查是否有 fileId 數據
+    const hasFileId = imageData.some(item => item.fileId);
+    if (!hasFileId) {
+        console.warn('警告: 數據中未找到 fileId 字段，圖片可能無法正確顯示');
+    }
+    
+    // 提取level的唯一值
+    const levelSet = new Set();
+    imageData.forEach(item => {
+        if (item.level) levelSet.add(item.level);
+    });
+    filterOptions.level = Array.from(levelSet).sort();
+    
+    // 初始化level篩選器
+    const levelContainer = document.getElementById('level-filters');
+    levelContainer.innerHTML = '';
+    filterOptions.level.forEach(option => {
+        const optionElement = document.createElement('div');
+        optionElement.className = 'filter-option';
+        optionElement.textContent = option;
+        optionElement.dataset.value = option;
+        
+        optionElement.addEventListener('click', function() {
+            this.classList.toggle('selected');
+            
+            if (this.classList.contains('selected')) {
+                selectedFilters.level.push(option);
+            } else {
+                const index = selectedFilters.level.indexOf(option);
+                if (index > -1) {
+                    selectedFilters.level.splice(index, 1);
+                }
+            }
+            
+            filterImages();
+        });
+        
+        levelContainer.appendChild(optionElement);
+    });
+    
+    // 隱藏加載提示
+    document.getElementById('loading').style.display = 'none';
+    
+    // 不立即顯示圖片，等待篩選條件
+    filteredImages = [...imageData];
+    
+    console.log('成功加載數據:', imageData.length, '條記錄');
+    console.log('包含 fileId 的記錄:', imageData.filter(item => item.fileId).length);
+    
+    // 顯示提示訊息
+    showInitialPrompt();
+}
+        
+// 篩選圖片
+function filterImages() {
+    const imageGrid = document.getElementById('image-grid');
+    const noResults = document.getElementById('no-results');
+    
+    // 檢查是否有選擇任何篩選條件
+    let hasActiveFilters = false;
+    for (const category in selectedFilters) {
+        if (selectedFilters[category].length > 0) {
+            hasActiveFilters = true;
+            break;
+        }
+    }
+    
+    if (!hasActiveFilters) {
+        // 沒有選擇篩選條件，隱藏圖片區域
+        imageGrid.style.display = 'none';
+        noResults.style.display = 'none';
+        showInitialPrompt();
+        return;
+    }
+    
+    // 應用篩選條件
+    filteredImages = imageData.filter(image => {
+        // 檢查每個類別的篩選條件
+        for (const category in selectedFilters) {
+            if (selectedFilters[category].length > 0) {
+                // 對於topic，需要特殊處理，因為一個圖片可能有多個topic
+                if (category === 'topic') {
+                    // 檢查圖片是否包含任何選中的topic
+                    const hasMatchingTopic = selectedFilters[category].some(selectedTopic => 
+                        image.topic.includes(selectedTopic)
+                    );
+                    
+                    if (!hasMatchingTopic) {
+                        return false;
+                    }
+                } else {
+                    // 對於其他類別，檢查圖片的值是否在選中的值中
+                    if (!selectedFilters[category].includes(image[category])) {
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        return true;
+    });
+    
+    // 顯示結果
+    displayImages();
+
+    // 更新導出按鈕狀態
+    updateExportButton(); // 添加這一行
+
+}
+
+// 導出到 DOCX
+async function exportToDocx() {
+    if (filteredImages.length === 0) return;
+    
+    const progressElement = document.getElementById('export-progress');
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    
+    // 顯示進度條
+    progressElement.style.display = 'block';
+    progressFill.style.width = '0%';
+    progressText.textContent = 'Preparing DOCX export...';
+    
+    try {
+        // 加載 docx 庫
+        const { Document, Packer, Paragraph, Table, TableCell, TableRow, HeadingLevel, ImageRun, WidthType } = await loadDocxLibrary();
+        
+        // 創建新文檔
+        const doc = new Document({
+            sections: [{
+                properties: {},
+                children: [
+                    // 標題
+                    new Paragraph({
+                        text: "DSE Questions Collection",
+                        heading: HeadingLevel.HEADING_1,
+                        alignment: "center"
+                    }),
+                    new Paragraph({
+                        text: `Generated on ${new Date().toLocaleDateString()}`,
+                        alignment: "center"
+                    }),
+                    new Paragraph({ text: "" }),
+                    
+                    // 篩選條件摘要
+                    new Paragraph({
+                        text: "Filter Criteria:",
+                        heading: HeadingLevel.HEADING_2
+                    }),
+                    ...createFilterSummary(),
+                    new Paragraph({ text: "" }),
+                    
+                    // 問題列表標題
+                    new Paragraph({
+                        text: `Questions (${filteredImages.length} items):`,
+                        heading: HeadingLevel.HEADING_2
+                    })
+                ]
+            }]
+        });
+        
+        let processedCount = 0;
+        
+        // 為每個問題添加內容
+        for (const image of filteredImages) {
+            try {
+                // 問題標題
+                const questionTitle = new Paragraph({
+                    text: `${image.name.replace('.jpg', '')}`,
+                    heading: HeadingLevel.HEADING_3,
+                    pageBreakBefore: processedCount > 0 // 第一個問題不分頁
+                });
+                
+                // 問題信息表格
+                const infoTable = createInfoTable(image);
+                
+                // 空行
+                const emptyLine = new Paragraph({ text: "" });
+                
+                // 圖片段落
+                const imageParagraphs = await createImageParagraph(image);
+                
+                // 添加到文檔
+                doc.addSection({
+                    properties: {
+                        page: {
+                            margin: {
+                                top: 1000,
+                                right: 1000,
+                                bottom: 1000,
+                                left: 1000
+                            }
+                        }
+                    },
+                    children: [
+                        questionTitle,
+                        infoTable,
+                        emptyLine,
+                        ...imageParagraphs
+                    ]
+                });
+                
+                processedCount++;
+                const progress = Math.round((processedCount / filteredImages.length) * 100);
+                progressFill.style.width = `${progress}%`;
+                progressText.textContent = `Adding questions... ${processedCount}/${filteredImages.length} (${progress}%)`;
+                
+            } catch (error) {
+                console.error(`Failed to process image: ${image.name}`, error);
+            }
+        }
+        
+        progressText.textContent = 'Generating DOCX file...';
+        
+        // 生成 DOCX 文件
+        const blob = await Packer.toBlob(doc);
+        
+        // 創建下載鏈接
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const filename = `dse_questions_${timestamp}.docx`;
+        
+        // 使用 FileSaver 下載
+        saveAs(blob, filename);
+        
+        progressText.textContent = 'DOCX export completed!';
+        
+        // 3秒後隱藏進度條
+        setTimeout(() => {
+            progressElement.style.display = 'none';
+        }, 3000);
+        
+    } catch (error) {
+        console.error('DOCX export failed:', error);
+        progressText.textContent = 'Export failed: ' + error.message;
+    }
+}
+
+// 創建篩選條件摘要
+function createFilterSummary() {
+    const paragraphs = [];
+    const activeFilters = [];
+    
+    for (const category in selectedFilters) {
+        if (selectedFilters[category].length > 0) {
+            activeFilters.push(`${category}: ${selectedFilters[category].join(', ')}`);
+        }
+    }
+    
+    if (activeFilters.length === 0) {
+        paragraphs.push(new Paragraph({ text: "No filters applied (showing all questions)" }));
+    } else {
+        activeFilters.forEach(filter => {
+            paragraphs.push(new Paragraph({ text: `• ${filter}` }));
+        });
+    }
+    
+    paragraphs.push(new Paragraph({ text: "" }));
+    return paragraphs;
+}
+
+// 創建信息表格
+function createInfoTable(image) {
+    const { Table, TableRow, TableCell, Paragraph, WidthType } = window.docx;
+    
+    return new Table({
+        width: {
+            size: 100,
+            type: WidthType.PERCENTAGE,
+        },
+        borders: {
+            top: { style: "single", size: 1, color: "AAAAAA" },
+            bottom: { style: "single", size: 1, color: "AAAAAA" },
+            left: { style: "single", size: 1, color: "AAAAAA" },
+            right: { style: "single", size: 1, color: "AAAAAA" },
+            insideHorizontal: { style: "single", size: 1, color: "AAAAAA" },
+            insideVertical: { style: "single", size: 1, color: "AAAAAA" },
+        },
+        rows: [
+            new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph({ text: "Stage" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.stage || "N/A" })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Year" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.year || "N/A" })] })
+                ]
+            }),
+            new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph({ text: "Paper" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.paper || "N/A" })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Section" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.section || "N/A" })] })
+                ]
+            }),
+            new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph({ text: "Level" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.level || "N/A" })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Strand" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.strand || "N/A" })] })
+                ]
+            }),
+            new TableRow({
+                children: [
+                    new TableCell({ 
+                        children: [new Paragraph({ text: "Topics" })],
+                        columnSpan: 3
+                    }),
+                    new TableCell({ 
+                        children: [new Paragraph({ text: image.topic.join(', ') || "N/A" })]
+                    })
+                ]
+            })
+        ]
+    });
+}
+
+// 創建圖片段落（帶最大寬度限制）
+async function createImageParagraph(image) {
+    try {
+        console.log(`Creating image paragraph for: ${image.name}`);
+        
+        const imageBlob = await downloadImageAsBlob(image);
+        if (!imageBlob) {
+            throw new Error('Failed to download image blob');
+        }
+        
+        if (imageBlob.size === 0) {
+            throw new Error('Downloaded blob is empty');
+        }
+        
+        console.log(`Image blob downloaded successfully: ${imageBlob.size} bytes, type: ${imageBlob.type}`);
+        
+        const arrayBuffer = await imageBlob.arrayBuffer();
+        
+        // 獲取圖片的自然尺寸
+        const imgDimensions = await getImageDimensions(imageBlob);
+        
+        // 設置最大寬度為 600，高度按比例縮放
+        const maxWidth = 600;
+        let { width, height } = imgDimensions;
+        
+        if (width > maxWidth) {
+            const ratio = maxWidth / width;
+            width = maxWidth;
+            height = Math.round(height * ratio);
+        }
+        
+        const { Paragraph, ImageRun } = window.docx;
+        
+        return new Paragraph({
+            children: [
+                new ImageRun({
+                    data: arrayBuffer,
+                    transformation: {
+                        width: width,
+                        height: height
+                    }
+                })
+            ],
+            alignment: "left"
+        });
+        
+    } catch (error) {
+        console.warn(`Cannot add image ${image.name} to DOCX:`, error.message);
+        const { Paragraph } = window.docx;
+        return new Paragraph({ 
+            text: `[Image not available: ${image.name}]`,
+            alignment: "center",
+            style: "Note"
+        });
+    }
+}
+
+// 獲取圖片自然尺寸的函數
+function getImageDimensions(blob) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(blob);
+        
+        img.onload = function() {
+            // 使用圖片的自然尺寸
+            const dimensions = {
+                width: img.naturalWidth,
+                height: img.naturalHeight
+            };
+            console.log(`Image dimensions: ${dimensions.width}x${dimensions.height}`);
+            URL.revokeObjectURL(url);
+            resolve(dimensions);
+        };
+        
+        img.onerror = function() {
+            URL.revokeObjectURL(url);
+            console.warn('Failed to get image dimensions, using default size');
+            // 如果無法獲取尺寸，使用合理的默認值
+            resolve({ width: 500, height: 375 });
+        };
+        
+        img.src = url;
+    });
+}
+
+// 下載圖片為 Blob
+async function downloadImageAsBlob(image) {
+    try {
+        const fileId = getFileIdFromName(image.name);
+        
+        if (!fileId || fileId === 'default_file_id' || fileId === image.name) {
+            console.warn(`Invalid file ID for ${image.name}`);
+            return null;
+        }
+        
+        console.log(`Downloading image: ${image.name}, FileID: ${fileId}`);
+        
+        // 嘗試多種 Google Drive 圖片鏈接格式
+        const driveUrls = [
+            `https://drive.google.com/uc?export=download&id=${fileId}`,
+            `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`,
+            `https://drive.google.com/uc?export=view&id=${fileId}`,
+            `https://lh3.googleusercontent.com/d/${fileId}=w1000`,
+            `https://docs.google.com/uc?id=${fileId}`,
+            // 嘗試直接使用網頁顯示的圖片URL
+            `https://drive.google.com/file/d/${fileId}/view?usp=sharing`
+        ];
+        
+        for (const url of driveUrls) {
+            try {
+                console.log(`Trying URL: ${url}`);
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    const contentType = response.headers.get('content-type');
+                    console.log(`Success with URL: ${url}, Content-Type: ${contentType}`);
+                    
+                    // 檢查是否是有效的圖片響應
+                    if (contentType && contentType.startsWith('image/')) {
+                        const blob = await response.blob();
+                        console.log(`Successfully downloaded image: ${image.name}, Size: ${blob.size} bytes`);
+                        return blob;
+                    } else {
+                        console.warn(`Invalid content type for ${url}: ${contentType}`);
+                        // 可能是HTML頁面而不是圖片，繼續嘗試下一個URL
+                        continue;
+                    }
+                } else {
+                    console.warn(`HTTP ${response.status} for URL: ${url}`);
+                }
+            } catch (error) {
+                console.warn(`Failed to fetch from ${url}:`, error.message);
+                continue;
+            }
+        }
+        
+        throw new Error('All download methods failed');
+        
+    } catch (error) {
+        console.warn(`Cannot download image ${image.name}:`, error.message);
+        return null;
+    }
+}
+
+
+// 動態加載 docx 庫
+function loadDocxLibrary() {
+    return new Promise((resolve, reject) => {
+        if (window.docx && window.saveAs) {
+            resolve(window.docx);
+            return;
+        }
+        
+        // 使用更穩定的 CDN
+        const docxCDN = 'https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.min.js';
+        const fileSaverCDN = 'https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js';
+        
+        let scriptsLoaded = 0;
+        const totalScripts = 2;
+        
+        function onScriptLoad() {
+            scriptsLoaded++;
+            if (scriptsLoaded === totalScripts) {
+                if (window.docx && window.saveAs) {
+                    resolve(window.docx);
+                } else {
+                    reject(new Error('Failed to load required libraries'));
+                }
+            }
+        }
+        
+        function onScriptError(error) {
+            reject(new Error(`Failed to load script: ${error.target.src}`));
+        }
+        
+        // 加載 FileSaver  first
+        const fileSaverScript = document.createElement('script');
+        fileSaverScript.src = fileSaverCDN;
+        fileSaverScript.onload = onScriptLoad;
+        fileSaverScript.onerror = onScriptError;
+        document.head.appendChild(fileSaverScript);
+        
+        // 加載 docx
+        const docxScript = document.createElement('script');
+        docxScript.src = docxCDN;
+        docxScript.onload = onScriptLoad;
+        docxScript.onerror = onScriptError;
+        document.head.appendChild(docxScript);
+        
+        // 設置超時
+        setTimeout(() => {
+            if (scriptsLoaded < totalScripts) {
+                reject(new Error('Library loading timeout'));
+            }
+        }, 30000);
+    });
+}
+
+async function exportToDocx() {
+    if (filteredImages.length === 0) return;
+    
+    const progressElement = document.getElementById('export-progress');
+    const progressFill = document.getElementById('progress-fill');
+    const progressText = document.getElementById('progress-text');
+    
+    progressElement.style.display = 'block';
+    progressFill.style.width = '0%';
+    progressText.textContent = 'Loading libraries...';
+    
+    try {
+        await loadDocxLibrary();
+        const { Document, Packer, Paragraph, Table, TableCell, TableRow, HeadingLevel, ImageRun, WidthType } = window.docx;
+        
+        progressText.textContent = 'Creating document...';
+        
+        const children = [
+            new Paragraph({
+                text: "DSE Questions Collection",
+                heading: HeadingLevel.HEADING_1,
+                alignment: "center"
+            }),
+            new Paragraph({
+                text: `Generated on ${new Date().toLocaleDateString()}`,
+                alignment: "center"
+            }),
+            new Paragraph({ text: "" }),
+            new Paragraph({
+                text: `Questions (${filteredImages.length} items):`,
+                heading: HeadingLevel.HEADING_2
+            }),
+            new Paragraph({ text: "" })
+        ];
+        
+        let processedCount = 0;
+        let successfulImages = 0;
+        
+        for (const image of filteredImages) {
+            try {
+                progressText.textContent = `Processing image ${processedCount + 1}/${filteredImages.length}`;
+                
+                // 添加分頁（除了第一個）
+                if (processedCount > 0) {
+                    children.push(new Paragraph({
+                        text: "",
+                        pageBreakBefore: true
+                    }));
+                }
+                
+                // 問題標題
+                children.push(new Paragraph({
+                    text: `${image.name.replace('.jpg', '')}`,
+                    heading: HeadingLevel.HEADING_3
+                }));
+                
+                // 問題信息表格
+               // children.push(createCorrectInfoTable(image));
+               // children.push(new Paragraph({ text: "" }));
+                
+                // 添加圖片
+                const imageParagraph = await createImageParagraph(image);
+                children.push(imageParagraph);
+                
+                // 檢查是否成功添加圖片
+                if (imageParagraph.children && imageParagraph.children[0] instanceof ImageRun) {
+                    successfulImages++;
+                }
+                
+                children.push(new Paragraph({ text: "" }));
+                
+                processedCount++;
+                const progress = Math.round((processedCount / filteredImages.length) * 100);
+                progressFill.style.width = `${progress}%`;
+                
+            } catch (error) {
+                console.error(`Failed to process image: ${image.name}`, error);
+                processedCount++;
+            }
+        }
+        
+        // 添加總結信息
+      //  children.push(new Paragraph({ text: "" }));
+      //  children.push(new Paragraph({
+      //      text: `Export Summary: ${successfulImages}/${filteredImages.length} images successfully included`,
+      //      style: "strong"
+      //  }));
+        
+        const doc = new Document({
+            sections: [{
+                properties: {},
+                children: children
+            }]
+        });
+        
+        progressText.textContent = 'Generating DOCX file...';
+        const blob = await Packer.toBlob(doc);
+        
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const filename = `dse_questions_${timestamp}.docx`;
+        
+        saveAs(blob, filename);
+        
+        progressText.textContent = `Export completed! ${successfulImages}/${filteredImages.length} images included`;
+        progressFill.style.width = '100%';
+        
+        setTimeout(() => {
+            progressElement.style.display = 'none';
+        }, 5000);
+        
+    } catch (error) {
+        console.error('DOCX export failed:', error);
+        progressText.textContent = 'Export failed: ' + error.message;
+        
+        // 提供備用方案
+        setTimeout(() => {
+            if (confirm('DOCX export failed. Would you like to export as CSV instead?')) {
+                exportAsCSV();
+            }
+        }, 1000);
+    }
+}
+
+// 修正的信息表格創建函數
+function createCorrectInfoTable(image) {
+    const { Table, TableRow, TableCell, Paragraph, WidthType } = window.docx;
+    
+    return new Table({
+        width: {
+            size: 100,
+            type: WidthType.PERCENTAGE,
+        },
+        columnWidths: [20, 20, 20, 20],
+        borders: {
+            top: { style: "single", size: 1, color: "AAAAAA" },
+            bottom: { style: "single", size: 1, color: "AAAAAA" },
+            left: { style: "single", size: 1, color: "AAAAAA" },
+            right: { style: "single", size: 1, color: "AAAAAA" },
+            insideHorizontal: { style: "single", size: 1, color: "AAAAAA" },
+            insideVertical: { style: "single", size: 1, color: "AAAAAA" },
+        },
+        rows: [
+            new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph({ text: "Stage" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.stage || "N/A" })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Year" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.year || "N/A" })] })
+                ]
+            }),
+            new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph({ text: "Paper" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.paper || "N/A" })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Section" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.section || "N/A" })] })
+                ]
+            }),
+            new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph({ text: "Level" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.level || "N/A" })] }),
+                    new TableCell({ children: [new Paragraph({ text: "Strand" })] }),
+                    new TableCell({ children: [new Paragraph({ text: image.strand || "N/A" })] })
+                ]
+            }),
+            new TableRow({
+                children: [
+                    new TableCell({ 
+                        children: [new Paragraph({ text: "Topics" })],
+                        columnSpan: 3
+                    }),
+                    new TableCell({ 
+                        children: [new Paragraph({ text: image.topic.join(', ') || "N/A" })]
+                    })
+                ]
+            })
+        ]
+    });
+}
+
+// 備用 CSV 導出功能
+function exportAsCSV() {
+    const headers = ['Name', 'Stage', 'Year', 'Paper', 'Section', 'Level', 'Strand', 'Topics'];
+    let csvContent = headers.join(',') + '\n';
+    
+    filteredImages.forEach(image => {
+        const row = [
+            image.name,
+            image.stage,
+            image.year,
+            image.paper,
+            image.section,
+            image.level,
+            image.strand,
+            image.topic.join(';')
+        ].map(field => `"${field}"`).join(',');
+        
+        csvContent += row + '\n';
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const filename = `dse_questions_${timestamp}.csv`;
+    
+    saveAs(blob, filename);
+}
+        
+// 顯示圖片
+function displayImages() {
+    const imageGrid = document.getElementById('image-grid');
+    const resultCount = document.getElementById('result-count');
+    const noResults = document.getElementById('no-results');
+    
+    // 清空當前顯示的圖片
+    imageGrid.innerHTML = '';
+    
+    // 更新結果計數
+    resultCount.textContent = filteredImages.length;
+    
+    // 隱藏初始提示
+    hideInitialPrompt();
+    
+    // 如果沒有匹配的圖片
+    if (filteredImages.length === 0) {
+        imageGrid.style.display = 'none';
+        noResults.style.display = 'block';
+        return;
+    } else {
+        // 顯示圖片區域
+        imageGrid.style.display = 'grid';
+        noResults.style.display = 'none';
+    }
+    
+    // 顯示匹配的圖片
+    filteredImages.forEach(image => {
+        const imageCard = document.createElement('div');
+        imageCard.className = 'image-card';
+        
+        // 資訊區域（上方）
+        const imageInfo = document.createElement('div');
+        imageInfo.className = 'image-info';
+        
+const titleRow = document.createElement('div');
+titleRow.className = 'title-row';
+
+const title = document.createElement('h4');
+title.textContent = `${image.name.replace('.jpg', '')}`;
+
+const solBtn = document.createElement('button');
+solBtn.className = 'pdf-btn';
+solBtn.textContent = 'Solution/Answer';
+
+if (image.solID && String(image.solID).trim() !== '') {
+  solBtn.addEventListener('click', function() {
+    openDrivePdfPopup(
+      image.solID,
+      `${image.name.replace('.jpg', '')} - Solution/Answer`
+    );
+  });
+} else {
+  solBtn.disabled = true;
+  solBtn.textContent = 'No Solution';
+}
+
+titleRow.appendChild(title);
+titleRow.appendChild(solBtn);
+imageInfo.appendChild(titleRow);
+
+        
+        // 圖片區域（下方）
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'image-container';
+        
+        const img = createSimpleImageElement(image);
+        imageContainer.appendChild(img);
+        
+        // 按正確順序添加
+        imageCard.appendChild(imageInfo);
+        imageCard.appendChild(imageContainer);
+        
+        imageGrid.appendChild(imageCard);
+    });
+}
+
+function openDrivePdfPopup(solID, titleText = 'Solution/Answer') {
+  if (!solID || !String(solID).trim()) {
+    alert('此題未有 Solution/Answer PDF。');
+    return;
+  }
+
+  const cleanSolID = String(solID).trim();
+
+  // Google Drive PDF preview URL
+  const pdfUrl = `https://drive.google.com/file/d/${cleanSolID}/preview`;
+
+  const popup = window.open('', '_blank', 'width=1000,height=800');
+
+  if (!popup) {
+    alert('瀏覽器封鎖了彈出視窗，請先允許彈出視窗。');
+    return;
+  }
+
+popup.document.write(`
+  <!DOCTYPE html>
+  <html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8">
+    <title>${titleText}</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #f4f4f4;
+        font-family: Arial, sans-serif;
+      }
+      .pdf-header {
+        height: 44px;
+        line-height: 44px;
+        padding: 0 12px;
+        background: #4a6fa5;
+        color: white;
+        font-size: 14px;
+      }
+      iframe {
+        width: 100%;
+        height: calc(100% - 44px);
+        border: none;
+        background: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="pdf-header">${titleText}</div>
+    <iframe src="${pdfUrl}"></iframe>
+  </body>
+  </html>
+`);
+
+
+  popup.document.close();
+}
+
+
+// 顯示初始提示
+function showInitialPrompt() {
+    let promptElement = document.getElementById('initial-prompt');
+    
+    if (!promptElement) {
+        promptElement = document.createElement('div');
+        promptElement.id = 'initial-prompt';
+        promptElement.className = 'initial-prompt';
+        promptElement.innerHTML = `
+            <div class="prompt-content">
+                <h3>👋 Classify DSE questions</h3>
+                <p>Select filter(s) from the left to show DSE questions</p>
+                <div class="prompt-tips">
+                    <p><strong>Hit:</strong></p>
+                    <ul>
+                        <li>Click on the filter on the left</li>
+                        <li>Multiple conditions can be selected</li>
+                        <li>Click 'Reset Filter' to clear all</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        document.querySelector('.results').appendChild(promptElement);
+    }
+    
+    promptElement.style.display = 'block';
+}
+
+// 隱藏初始提示
+function hideInitialPrompt() {
+    const promptElement = document.getElementById('initial-prompt');
+    if (promptElement) {
+        promptElement.style.display = 'none';
+    }
+}
+
+// 改進的圖片創建函數
+function createSimpleImageElement(image) {
+    const fileId = getFileIdFromName(image.name);
+    const img = document.createElement('img');
+    img.alt = image.name;
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    
+    console.log(`嘗試加載圖片: ${image.name}, FileID: ${fileId}`);
+    
+    if (fileId && fileId !== 'default_file_id' && fileId !== image.name) {
+        // 嘗試多種 Google Drive 圖片鏈接格式
+        const driveUrls = [
+            `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`, // 增加尺寸
+            `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`,
+            `https://drive.google.com/uc?export=view&id=${fileId}`,
+            `https://lh3.googleusercontent.com/d/${fileId}=s1000`, // 修正格式
+            `https://docs.google.com/uc?id=${fileId}`,
+            `https://drive.google.com/file/d/${fileId}/view` // 添加文件頁面鏈接
+        ];
+        
+        // 設置第一種鏈接
+        img.src = driveUrls[0];
+        console.log(`使用鏈接: ${driveUrls[0]}`);
+        
+        // 如果第一種失敗，嘗試其他鏈接
+        let currentUrlIndex = 0;
+        img.onerror = function() {
+            currentUrlIndex++;
+            if (currentUrlIndex < driveUrls.length) {
+                console.log(`鏈接 ${currentUrlIndex} 失敗，嘗試鏈接 ${currentUrlIndex + 1}: ${driveUrls[currentUrlIndex]}`);
+                this.src = driveUrls[currentUrlIndex];
+            } else {
+                // 所有鏈接都失敗，顯示本地 SVG 占位圖
+                console.log(`所有圖片鏈接都失敗: ${image.name}`);
+                this.src = createPlaceholderImage(image.name, 600, 400);
+                this.onerror = null; // 防止無限循環
+            }
+        };
+        
+        img.onload = function() {
+            console.log(`圖片加載成功: ${image.name}`);
+        };
+        
+    } else {
+        // 沒有文件ID，顯示本地 SVG 占位圖
+        console.log(`無效的文件ID，使用本地占位圖: ${image.name}`);
+        img.src = createPlaceholderImage(image.name, 600, 400);
+    }
+    
+    return img;
+}
+        
+// 從文件名獲取文件ID - 從數據中讀取
+function getFileIdFromName(filename) {
+    // 在 imageData 中查找對應的文件ID
+    const image = imageData.find(item => item.name === filename);
+    
+    if (image && image.fileId && image.fileId.trim() !== '') {
+        return image.fileId;
+    }
+        
+    console.warn(`未找到文件ID對應: ${filename}`);
+    return fallbackMapping[filename] || filename;
+}
+
+// 創建本地占位圖的函數
+function createPlaceholderImage(filename, width = 300, height = 200) {
+    // 使用 SVG 作為占位圖 - 這不會有網絡請求問題
+    const svg = `
+        <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#4a6fa5"/>
+            <text x="50%" y="50%" text-anchor="middle" dy="0.3em" fill="white" font-family="Arial, sans-serif" font-size="14">
+                ${filename}
+            </text>
+        </svg>`;
+    
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+        
+// 重置篩選條件
+function resetFilters() {
+    // 清空選中的篩選條件
+    for (const category in selectedFilters) {
+        selectedFilters[category] = [];
+    }
+    
+    // 移除所有篩選選項的選中狀態
+    document.querySelectorAll('.filter-option.selected').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    // 隱藏圖片區域，顯示初始提示
+    document.getElementById('image-grid').style.display = 'none';
+    document.getElementById('no-results').style.display = 'none';
+    showInitialPrompt();
+    
+    // 重置結果計數
+    document.getElementById('result-count').textContent = '0';
+}
+
+// 導出功能
+document.getElementById('export-docx-btn').addEventListener('click', exportToDocx);
+
+// 更新導出按鈕狀態
+function updateExportButton() {
+    const exportBtn = document.getElementById('export-docx-btn');
+    exportBtn.disabled = filteredImages.length === 0;
+}
+
+
+
+</script>
+</body>
+</html>
