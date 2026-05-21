@@ -500,18 +500,19 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadImageData() {
   const API_URL = 'https://script.google.com/macros/s/AKfycby5vV5O93XSOvN4cLhEGaDsr8ST9dT4Z2-9w5PlmOrmPkYgWUEzbGOBAKkGLtYJsPlv/exec';
 
-  try {
-    const data = await loadJSONP(API_URL);
 
-    console.log('API回應:', data);
+  try {
+    const response = await fetch(API_URL);
+    const data = await response.json();
 
     processImageData(data);
 
   } catch (error) {
-    console.error('JSONP錯誤:', error);
+    console.error(error);
     alert('讀取資料失敗: ' + error.message);
   }
 }
+
         
         // 处理手动输入的数据
         function processManualData() {
