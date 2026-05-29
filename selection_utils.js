@@ -98,7 +98,7 @@ function _0x6b() {
         prompt = document.createElement('div');
         prompt.id = 'initial-prompt';
         prompt.className = 'initial-prompt';
-        prompt.innerHTML = `<div class="prompt-content"><div class="prompt-tips"><ul><li>Select Stage / Year / Paper / Section / Level / Strand / Chapter / Topic to show questions</li><li>Reload the page if not all the questions (1332 Qs) are found</li><li>Click the question to show another language</li></ul></div></div>`;
+        prompt.innerHTML = `<div class="prompt-content"><div class="prompt-tips"><ul><li>Select the filter on the left to show questions</li><li>Reload the page if not all the questions (1332 Qs) are found</li><li>Click the question to show another language</li></ul></div></div>`;
         document.querySelector('.results').appendChild(prompt);
       }
       prompt.style.display = 'block';
