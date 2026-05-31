@@ -1,77 +1,13 @@
-function _0xN2(a){return String(a||"").split("").reverse().reverse().join("");}
-function _0x3a(image) {
-  const img = document.createElement('img');
-  img.alt = image.name || 'question image';
-  const fileId = image.fileId;
-  const ceId = image.CEfileID;
-  function buildUrls(id) {
-    return [
-      `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w2000`,
-      `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1000`,
-      `https://drive.google.com/uc?export=view&id=${encodeURIComponent(id)}`
-    ];
-  }
-  const eeUrls = fileId ? buildUrls(fileId) : [];
-  const ceUrls = ceId ? buildUrls(ceId) : [];
-  let currentIndex = 0;
-  let currentMode = "EE"; // EE or CE
-  let urlIndex = 0;
-  function loadImage(urlList) {
-    if (!urlList.length) {
-      img.src = _0x3d(image.name || 'No image', 600, 400);
-      return;
-    }
-    urlIndex = 0;
-    img.src = urlList[urlIndex];
-    img.onerror = function () {
-      urlIndex++;
-      if (urlIndex < urlList.length) {
-        img.src = urlList[urlIndex];
-      } else {
-        img.onerror = null;
-        img.src = _0x3d(image.name || 'Load fail', 600, 400);
-      }
-    };
-  }
-  loadImage(eeUrls);
-  if (ceId) {
-    img.style.cursor = "pointer";
-    img.title = "Click to toggle EE ↔ CE";
-    img.addEventListener("click", function () {
-      if (currentMode === "EE") {
-        currentMode = "CE";
-        loadImage(ceUrls);
-      } else {
-        currentMode = "EE";
-        loadImage(eeUrls);
-      }
-    });
-  }
-  return img;
-}
-function _0x3b(fileId, titleText='Preview', type='pdf') {
-      if (!fileId || !String(fileId).trim()) { alert('沒有可開啟的 Google Drive ID。'); return; }
-      const cleanId = String(fileId).trim();
-      const url = type === 'image'
-        ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(cleanId)}&sz=w2000`
-        : `https://drive.google.com/file/d/${encodeURIComponent(cleanId)}/preview`;
-      const popup = window.open('', '_blank', 'width=1000,height=800');
-      if (!popup) { alert('瀏覽器封鎖了彈出視窗，請先允許彈出視窗。'); return; }
-      const body = type === 'image'
-        ? `<div class="image-wrap"><img src="${url}" alt="${_0x3c(titleText)}"></div>`
-        : `<iframe src="${url}"></iframe>`;
-      popup.document.write(`<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><title>${_0x3c(titleText)}</title><style>
+function _0xBB(image){const imageCard=document.createElement('div');imageCard.className='image-card';imageCard.dataset.name=image.name;if(_0xA4.has(image.name))imageCard.classList.add('selected');const checkboxContainer=document.createElement('div');checkboxContainer.className='checkbox-container';const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.className='image-checkbox';checkbox.checked=_0xA4.has(image.name);checkbox.addEventListener('change',function(){if(this.checked){if(!_0xA4.has(image.name))_0xA4.set(image.name,_0xA4.size+1);imageCard.classList.add('selected');}else{_0xA4.delete(image.name);imageCard.classList.remove('selected');_0xC4();}_0xC5();_0xC6();});const orderDisplay=document.createElement('div');orderDisplay.className='selection-order';orderDisplay.dataset.name=image.name;checkboxContainer.appendChild(checkbox);checkboxContainer.appendChild(orderDisplay);imageCard.appendChild(checkboxContainer);const imageInfo=document.createElement('div');imageInfo.className='image-info';const titleRow=document.createElement('div');titleRow.className='title-row';const title=document.createElement('h4');let displayText=`${String(image.name).replace(/\.[^.]+$/, '')}`;if(image.level)displayText+=` (Level: ${image.level})`;if(image.p2rate&&String(image.p2rate)!=='0')displayText+=` ${image.p2rate}%`;title.textContent=displayText;const buttonBox=document.createElement('div');buttonBox.className='title-buttons';const solBtn=document.createElement('button');solBtn.className='pdf-btn';solBtn.textContent=image.solID?'Solution/Answer':'No Solution';solBtn.disabled=!image.solID;if(image.solID)solBtn.addEventListener('click',()=>_0xBD(image.solID,`${displayText} - Solution/Answer`,'pdf'));const ceBtn=document.createElement('button');ceBtn.className='pdf-btn ce-btn';ceBtn.textContent=image.CEfileID?'CE Image':'No CE';ceBtn.disabled=!image.CEfileID;if(image.CEfileID)ceBtn.addEventListener('click',()=>_0xBD(image.CEfileID,`${displayText} - CE Image`,'image'));buttonBox.appendChild(solBtn);buttonBox.appendChild(ceBtn);titleRow.appendChild(title);titleRow.appendChild(buttonBox);imageInfo.appendChild(titleRow);const imageContainer=document.createElement('div');imageContainer.className='image-container';imageContainer.appendChild(_0xBC(image));imageCard.appendChild(imageInfo);imageCard.appendChild(imageContainer);return imageCard;}function _0xBC(image){const img=document.createElement('img');img.alt=image.name||'question image';const fileId=image.fileId;const ceId=image.CEfileID;function buildUrls(id){return[`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w2000`,`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1000`,`https://drive.google.com/uc?export=view&id=${encodeURIComponent(id)}`];}const eeUrls=fileId?buildUrls(fileId):[];const ceUrls=ceId?buildUrls(ceId):[];let currentIndex=0;let currentMode="EE";let urlIndex=0;function loadImage(urlList){if(!urlList.length){img.src=_0xBF(image.name||'No image',600,400);return;}urlIndex=0;img.src=urlList[urlIndex];img.onerror=function(){urlIndex++;if(urlIndex<urlList.length){img.src=urlList[urlIndex];}else{img.onerror=null;img.src=_0xBF(image.name||'Load fail',600,400);}};}loadImage(eeUrls);if(ceId){img.style.cursor="pointer";img.title="Click to toggle EE ↔ CE";img.addEventListener("click",function(){if(currentMode==="EE"){currentMode="CE";loadImage(ceUrls);}else{currentMode="EE";loadImage(eeUrls);}});}return img;}function _0xBD(fileId,titleText='Preview',type='pdf'){if(!fileId||!String(fileId).trim()){alert('沒有可開啟的 Google Drive ID。');return;}const cleanId=String(fileId).trim();const url=type==='image'?`https://drive.google.com/thumbnail?id=${encodeURIComponent(cleanId)}&sz=w2000`:`https://drive.google.com/file/d/${encodeURIComponent(cleanId)}/preview`;const popup=window.open('','_blank','width=1000,height=800');if(!popup){alert('瀏覽器封鎖了彈出視窗，請先允許彈出視窗。');return;}const body=type==='image'?`<div class="image-wrap"><img src="${url}" alt="${_0xBE(titleText)}"></div>`:`<iframe src="${url}"></iframe>`;popup.document.write(`<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><title>${_0xBE(titleText)}</title><style>
         html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#f4f4f4;font-family:Arial,sans-serif;}
         .pdf-header{height:44px;line-height:44px;padding:0 12px;background:#4a6fa5;color:white;font-size:14px;}
         iframe{width:100%;height:calc(100% - 44px);border:none;background:white;}
         .image-wrap{height:calc(100% - 44px);overflow:auto;text-align:center;padding:12px;}
         .image-wrap img{max-width:100%;height:auto;background:white;border:1px solid #ddd;}
-      </style></head><body><div class="pdf-header">${_0x3c(titleText)}</div>${body}</body></html>`);
-      popup.document.close();
-    }
-function _0x3c(s) { return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
-function _0x3d(filename, width=300, height=200) {
-      const safe = _0x3c(filename);
+      </style></head><body><div class="pdf-header">${_0xBE(titleText)}</div>${body}</body></html>`);popup.document.close();}function _0xBE(s){return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+
+    function _0xBF(filename, width=300, height=200) {
+      const safe = _0xBE(filename);
       const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#4a6fa5"/><text x="50%" y="50%" text-anchor="middle" dy="0.3em" fill="white" font-family="Arial" font-size="14">${safe}</text></svg>`;
       return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
     }
